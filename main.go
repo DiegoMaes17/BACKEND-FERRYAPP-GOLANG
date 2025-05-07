@@ -38,6 +38,7 @@ func main() {
 	r.Put("/api/empresas/actualizar/{rif}", handlers.EditarEmpresas(conn))
 	r.Put("/api/empresas/desactivar/{rif}", handlers.EstadoEmpresa(conn))
 	r.Put("/api/empresas/activar/{rif}", handlers.EstadoEmpresa(conn))
+	r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
 
 	// Servidor
 	port := os.Getenv("PORT")

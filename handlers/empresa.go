@@ -87,7 +87,7 @@ func RegistrarEmpresa(db *pgx.Conn) http.HandlerFunc {
 			return
 		}
 
-		//Respuesta extiosa
+		//Respuesta exitosa
 
 		w.Header().Set("Content-Type", "aplication/json")
 		w.WriteHeader(http.StatusCreated)
