@@ -34,11 +34,18 @@ func main() {
 		w.Write([]byte("¡Funciona!"))
 	})
 
+	//Post
 	r.Post("/api/empresas/registrar", handlers.RegistrarEmpresa(conn))
+	r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
+
+	//Put
 	r.Put("/api/empresas/actualizar/{rif}", handlers.EditarEmpresas(conn))
 	r.Put("/api/empresas/desactivar/{rif}", handlers.EstadoEmpresa(conn))
 	r.Put("/api/empresas/activar/{rif}", handlers.EstadoEmpresa(conn))
-	r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
+
+	r.Put("/api/empleado/actualizar/{cedula}", handlers.EditarEmpleado(conn))
+	r.Put("/api/empleado/activar/{cedula}", handlers.EstadoEmpleado(conn))
+	r.Put("/api/empleado/desactivar/{cedula}", handlers.EstadoEmpleado(conn))
 
 	// Servidor
 	port := os.Getenv("PORT")
