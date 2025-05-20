@@ -8,6 +8,7 @@ import (
 
 	"github.com/DiegoMaes17/BACKEND-FERRYAPP-GOLANG/database"
 	"github.com/DiegoMaes17/BACKEND-FERRYAPP-GOLANG/handlers"
+	"github.com/DiegoMaes17/BACKEND-FERRYAPP-GOLANG/middlewares"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -20,7 +21,8 @@ func main() {
 	defer conn.Close(context.Background())
 
 	r := chi.NewRouter()
-	//Server log
+
+	//Middleware de logging
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Solicitud recibida: %s %s", r.Method, r.URL.Path)
@@ -28,24 +30,51 @@ func main() {
 		})
 	})
 
-	// Router
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("Solicitud recibida: %s %s", r.Method, r.URL.Path)
+			next.ServeHTTP(w, r)
+		})
+	})
 
+	//Ruta publica
 	r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("¡Funciona!"))
 	})
 
-	//Post
-	r.Post("/api/empresas/registrar", handlers.RegistrarEmpresa(conn))
-	r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
+	r.Post("/api/login", handlers.IniciarSesion(conn))
 
-	//Put
-	r.Put("/api/empresas/actualizar/{rif}", handlers.EditarEmpresas(conn))
-	r.Put("/api/empresas/desactivar/{rif}", handlers.EstadoEmpresa(conn))
-	r.Put("/api/empresas/activar/{rif}", handlers.EstadoEmpresa(conn))
+	//Grupo de rutas protegidas
+	r.Group(func(r chi.Router) {
+		//Middleware JWT
+		r.Use(middlewares.AutenticacionJWT)
 
-	r.Put("/api/empleado/actualizar/{cedula}", handlers.EditarEmpleado(conn))
-	r.Put("/api/empleado/activar/{cedula}", handlers.EstadoEmpleado(conn))
-	r.Put("/api/empleado/desactivar/{cedula}", handlers.EstadoEmpleado(conn))
+		//Rutas para todos los autenticados
+		//Put
+		r.Put("/api/empresas/actualizar/{rif}", handlers.EditarEmpresas(conn))
+		r.Put("/api/empresas/desactivar/{rif}", handlers.EstadoEmpresa(conn))
+		r.Put("/api/empresas/activar/{rif}", handlers.EstadoEmpresa(conn))
+
+		r.Put("/api/empleado/actualizar/{cedula}", handlers.EditarEmpleado(conn))
+		r.Put("/api/empleado/activar/{cedula}", handlers.EstadoEmpleado(conn))
+		r.Put("/api/empleado/desactivar/{cedula}", handlers.EstadoEmpleado(conn))
+
+		//Subgrupo solo para administradores
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.SoloAdmin)
+
+			//Rutas de administradores
+			//Post
+			r.Post("/api/empresas/registrar", handlers.RegistrarEmpresa(conn))
+			r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
+
+		})
+
+	})
+
+	//Server log
+
+	// Router
 
 	// Servidor
 	port := os.Getenv("PORT")

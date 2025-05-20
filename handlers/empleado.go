@@ -31,15 +31,15 @@ func RegistrarEmpleado(db *pgx.Conn) http.HandlerFunc {
 		var CamposVacios []string
 
 		CamposRequeridos := map[string]string{
-			"Rif_empresa": request.Empleado.Rif_empresa,
-			"Nombres":     request.Empleado.Nombres,
-			"Cargo":       request.Empleado.Cargo,
-			"Apellidos":   request.Empleado.Apellidos,
-			"Email":       request.Empleado.Email,
-			"Numero_tlf":  request.Empleado.Numero_tlf,
-			"Usuario":     request.Usuario.Usuario,
-			"Contrasena":  request.Usuario.Contrasena,
-			"Cedula":      request.Empleado.Cedula,
+			"rif_empresa": request.Empleado.Rif_empresa,
+			"nombres":     request.Empleado.Nombres,
+			"cargo":       request.Empleado.Cargo,
+			"apellidos":   request.Empleado.Apellidos,
+			"email":       request.Empleado.Email,
+			"numero_tlf":  request.Empleado.Numero_tlf,
+			"usuario":     request.Usuario.Usuario,
+			"contrasena":  request.Usuario.Contrasena,
+			"cedula":      request.Empleado.Cedula,
 		}
 
 		//Campos requeridos
@@ -50,7 +50,7 @@ func RegistrarEmpleado(db *pgx.Conn) http.HandlerFunc {
 		}
 
 		if len(CamposVacios) > 0 {
-			MensajeError := "Faltan los siguientes campos:" + strings.Join(CamposVacios, ", ")
+			MensajeError := "Algunos campos estan vacios"
 			http.Error(w, MensajeError, http.StatusBadRequest)
 			return
 		}
