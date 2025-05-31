@@ -92,6 +92,18 @@ func SoloAdmin(next http.Handler) http.Handler {
 	})
 }
 
+func SoloEmpresa(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims := UsuarioDesdeContexto(r.Context())
+		if claims == nil || claims.TipoUsuario != "Empresa" {
+			responderError(w, http.StatusForbidden, "Acceso restringido a Empresas")
+
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func responderError(w http.ResponseWriter, status int, mensaje string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

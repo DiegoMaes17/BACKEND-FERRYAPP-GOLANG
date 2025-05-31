@@ -58,6 +58,10 @@ func main() {
 		r.Put("/api/empleado/actualizar/{cedula}", handlers.EditarEmpleado(conn))
 		r.Put("/api/empleado/activar/{cedula}", handlers.EstadoEmpleado(conn))
 		r.Put("/api/empleado/desactivar/{cedula}", handlers.EstadoEmpleado(conn))
+		r.Put("/api/usuario/{rif_cedula}", handlers.EditarUsuario(conn))
+
+		//Get
+		r.Get("/api/usuario/{rif_cedula}", handlers.ObtenerUsuario(conn))
 
 		//Subgrupo solo para administradores
 		r.Group(func(r chi.Router) {
@@ -67,6 +71,8 @@ func main() {
 			//Post
 			r.Post("/api/empresas/registrar", handlers.RegistrarEmpresa(conn))
 			r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
+			r.Post("/api/usuario/registrar", handlers.RegistrarUsuario(conn))
+			r.Put("/api/usuarios/{rif_cedula}/{accion}", handlers.EstadoUsuario(conn))
 
 		})
 
@@ -85,3 +91,11 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, r))
 
 }
+
+///Nota 1: Todo el codigo sera refactorizado y mejorado en algun momento.
+// Este proyecto es para una asignatura de la univesridad (Desarrollo de software 1)
+// Por cuestion de tiempo me veo en la necesidad de apresurar un poco mas el paso y extender los endpoint
+// Pero en un futuro planeo retomar el proyecto y mejorar el codigo tanto backend como frontend
+
+// Nota 2: Estoy aprendiendo GO (Golang) en el backend con este proyecto
+// Seguramente nadie lea esto :D///
