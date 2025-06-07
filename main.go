@@ -52,8 +52,7 @@ func main() {
 		//Rutas para todos los autenticados
 		//Put
 		r.Put("/api/empresas/actualizar/{rif}", handlers.EditarEmpresas(conn))
-		r.Put("/api/empresas/desactivar/{rif}", handlers.EstadoEmpresa(conn))
-		r.Put("/api/empresas/activar/{rif}", handlers.EstadoEmpresa(conn))
+		r.Put("/api/empresas/{rif}/{accion}", handlers.EstadoEmpresa(conn))
 
 		r.Put("/api/empleado/actualizar/{cedula}", handlers.EditarEmpleado(conn))
 		r.Put("/api/empleado/activar/{cedula}", handlers.EstadoEmpleado(conn))
@@ -62,6 +61,11 @@ func main() {
 
 		//Get
 		r.Get("/api/usuario/{rif_cedula}", handlers.ObtenerUsuario(conn))
+
+		//Ferry
+		r.Post("/api/ferry/registrar", handlers.RegistrarFerry(conn))
+		r.Put("/api/ferry/actulizar/{matricula}", handlers.EditarFerry(conn))
+		r.Get("/api/ferry/buscar/{matricula}", handlers.ObtenerFerry(conn))
 
 		//Subgrupo solo para administradores
 		r.Group(func(r chi.Router) {
@@ -72,7 +76,9 @@ func main() {
 			r.Post("/api/empresas/registrar", handlers.RegistrarEmpresa(conn))
 			r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
 			r.Post("/api/usuario/registrar", handlers.RegistrarUsuario(conn))
+			r.Get("/api/empresas/buscar/{rif}", handlers.ObtenerEmpresa(conn))
 			r.Put("/api/usuarios/{rif_cedula}/{accion}", handlers.EstadoUsuario(conn))
+			r.Put("/api/usuario/{rif_cedula}/cambiar-contrasena", handlers.CambiarContrasena(conn))
 
 		})
 
@@ -99,3 +105,7 @@ func main() {
 
 // Nota 2: Estoy aprendiendo GO (Golang) en el backend con este proyecto
 // Seguramente nadie lea esto :D///
+
+//Nota 3: Cuando termine toda esta api sera la version 1.0 cada refactorizacion y mejora en el codigo sera en una rama nueva y en versiones 1.x
+
+//Nota 4: Planeo en un futuro migrar de CHI a GIN seria en una version 2.0

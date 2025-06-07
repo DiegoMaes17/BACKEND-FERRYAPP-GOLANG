@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/DiegoMaes17/BACKEND-FERRYAPP-GOLANG/middlewares"
 	"github.com/DiegoMaes17/BACKEND-FERRYAPP-GOLANG/models"
 	"github.com/go-chi/chi/v5"
 
@@ -433,6 +434,103 @@ func CambiarContrasena(db *pgx.Conn) http.HandlerFunc {
 		_, err = db.Exec(context.Background(),
 			`UPDATE usuarios SET contrasena = $1 WHERE rif_cedula = $2`,
 			string(hashedPassword), rifCedula)
+
+		if err != nil {
+			responderError(w, &HandlerError{
+				Code:    http.StatusInternalServerError,
+				Message: "Error al actualizar contraseña",
+			})
+			return
+		}
+
+		responderJSON(w, http.StatusOK, map[string]string{
+			"mensaje": "Contraseña actualizada exitosamente",
+		})
+	}
+}
+
+// Cambio de contraseña personal
+func CambiarContrasenaPersonal(db *pgx.Conn) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Obtener el ID del usuario del token JWT
+		claims := middlewares.UsuarioDesdeContexto(r.Context())
+		if claims == nil {
+			responderError(w, &HandlerError{
+				Code:    http.StatusUnauthorized,
+				Message: "No se pudo verificar la identidad del usuario",
+			})
+			return
+		}
+
+		userId := claims.UsuarioID
+
+		var req struct {
+			ContrasenaActual string `json:"contrasenaActual"`
+			NuevaContrasena  string `json:"nuevaContrasena"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			responderError(w, &HandlerError{
+				Code:    http.StatusBadRequest,
+				Message: "Formato JSON inválido",
+			})
+			return
+		}
+
+		// Validar longitud mínima
+		if len(req.NuevaContrasena) < 8 {
+			responderError(w, &HandlerError{
+				Code:    http.StatusBadRequest,
+				Message: "La nueva contraseña debe tener al menos 8 caracteres",
+			})
+			return
+		}
+
+		// Obtener contraseña actual de la base de datos
+		var contrasenaActual string
+		err := db.QueryRow(context.Background(),
+			`SELECT contrasena FROM usuarios WHERE rif_cedula = $1`,
+			userId).Scan(&contrasenaActual)
+
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				responderError(w, &HandlerError{
+					Code:    http.StatusNotFound,
+					Message: "Usuario no encontrado",
+				})
+				return
+			}
+
+			responderError(w, &HandlerError{
+				Code:    http.StatusInternalServerError,
+				Message: "Error al consultar la base de datos",
+			})
+			return
+		}
+
+		// Verificar contraseña actual
+		if err := bcrypt.CompareHashAndPassword([]byte(contrasenaActual), []byte(req.ContrasenaActual)); err != nil {
+			responderError(w, &HandlerError{
+				Code:    http.StatusUnauthorized,
+				Message: "Contraseña actual incorrecta",
+			})
+			return
+		}
+
+		// Hash de la nueva contraseña
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NuevaContrasena), bcrypt.DefaultCost)
+		if err != nil {
+			responderError(w, &HandlerError{
+				Code:    http.StatusInternalServerError,
+				Message: "Error procesando contraseña",
+			})
+			return
+		}
+
+		// Actualizar contraseña
+		_, err = db.Exec(context.Background(),
+			`UPDATE usuarios SET contrasena = $1 WHERE rif_cedula = $2`,
+			string(hashedPassword), userId)
 
 		if err != nil {
 			responderError(w, &HandlerError{

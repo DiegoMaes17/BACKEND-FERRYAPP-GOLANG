@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/DiegoMaes17/BACKEND-FERRYAPP-GOLANG/models"
 	"github.com/go-chi/chi/v5"
@@ -46,13 +47,8 @@ func RegistrarEmpresa(db *pgx.Conn) http.HandlerFunc {
 			`SELECT rif FROM empresa WHERE rif=$1`, request.Empresa.RIF).Scan(&rifExistente)
 
 		if err == nil {
-			if err == pgx.ErrNoRows {
-				http.Error(w, "Este RIF ya esta registrado", http.StatusConflict)
-				return
-			} else if err != pgx.ErrNoRows {
-				http.Error(w, "Error verificando RIF:", http.StatusInternalServerError)
-				return
-			}
+			http.Error(w, `{"error": "Este RIF ya esta registrado"}`, http.StatusConflict)
+			return
 		}
 
 		// Hash para la contraseña
@@ -67,7 +63,7 @@ func RegistrarEmpresa(db *pgx.Conn) http.HandlerFunc {
 			`INSERT INTO empresa (rif, nombre, email, direccion, estado) VALUES ($1, $2, $3, $4, $5)`, request.Empresa.RIF, request.Empresa.Nombre, request.Empresa.Email, request.Empresa.Direccion, true)
 
 		if err != nil {
-			//Error RIF/email duplicado
+			//Error RIF
 			http.Error(w, "Error registrando empresa: "+err.Error(), http.StatusConflict)
 			return
 		}
@@ -147,7 +143,7 @@ func EstadoEmpresa(db *pgx.Conn) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//Obteniendo el RIF de la url
 		rifParam := chi.URLParam(r, "rif")
-		estadoParam := strings.Split(r.URL.Path, "/")[3]
+		estadoParam := chi.URLParam(r, "accion")
 
 		//Estado
 		var estado bool
@@ -192,5 +188,40 @@ func EstadoEmpresa(db *pgx.Conn) http.HandlerFunc {
 			"rif":     rifParam,
 			"estado":  fmt.Sprintf("%t", estado),
 		})
+	}
+}
+
+//Funciones especficas
+
+// Obtener empresa
+func ObtenerEmpresa(db *pgx.Conn) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rif := chi.URLParam(r, "rif")
+
+		var Empresa models.Empresa
+		err := db.QueryRow(context.Background(),
+			`SELECT rif, nombre, email, direccion,estado 
+			 FROM empresa
+			 WHERE 	rif = $1`,
+			rif,
+		).Scan(&Empresa.RIF, &Empresa.Nombre, &Empresa.Email, &Empresa.Direccion, &Empresa.Estado)
+
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				responderError(w, &HandlerError{
+					Code:    http.StatusNotFound,
+					Message: "Empresa no encontrada",
+				})
+				return
+			}
+
+			responderError(w, &HandlerError{
+				Code:    http.StatusInternalServerError,
+				Message: "Error al consultar la base de datos",
+			})
+			return
+		}
+
+		responderJSON(w, http.StatusOK, Empresa)
 	}
 }
