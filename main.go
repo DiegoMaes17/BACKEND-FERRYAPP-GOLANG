@@ -61,11 +61,21 @@ func main() {
 
 		//Get
 		r.Get("/api/usuario/{rif_cedula}", handlers.ObtenerUsuario(conn))
-
+		r.Put("/api/usuarios/{rif_cedula}/contrasena-personal", handlers.CambiarContrasenaPersonal(conn))
+		r.Get("/api/empresas/{rif}/empleados", handlers.EmpleadosPorEmpresa(conn))
 		//Ferry
 		r.Post("/api/ferry/registrar", handlers.RegistrarFerry(conn))
-		r.Put("/api/ferry/actulizar/{matricula}", handlers.EditarFerry(conn))
+		r.Put("/api/ferry/actualizar/{matricula}", handlers.EditarFerry(conn))
 		r.Get("/api/ferry/buscar/{matricula}", handlers.ObtenerFerry(conn))
+
+		r.Get("/api/empresas/buscar/{rif}", handlers.ObtenerEmpresa(conn))
+		r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
+
+		r.Get("/api/empresas/{rif}/ferrys", handlers.ObtenerFerrysPorEmpresa(conn))
+
+		r.Post("/api/factura/generar", handlers.CrearFactura(conn))
+		r.Get("/api/factura/obtener/{id}", handlers.ObtenerFactura(conn))
+		r.Put("/api/factura/{id}/estado/{accion}", handlers.CambiarEstadoFactura(conn))
 
 		//Subgrupo solo para administradores
 		r.Group(func(r chi.Router) {
@@ -74,9 +84,9 @@ func main() {
 			//Rutas de administradores
 			//Post
 			r.Post("/api/empresas/registrar", handlers.RegistrarEmpresa(conn))
-			r.Post("/api/empleado/registrar", handlers.RegistrarEmpleado(conn))
+
 			r.Post("/api/usuario/registrar", handlers.RegistrarUsuario(conn))
-			r.Get("/api/empresas/buscar/{rif}", handlers.ObtenerEmpresa(conn))
+
 			r.Put("/api/usuarios/{rif_cedula}/{accion}", handlers.EstadoUsuario(conn))
 			r.Put("/api/usuario/{rif_cedula}/cambiar-contrasena", handlers.CambiarContrasena(conn))
 
