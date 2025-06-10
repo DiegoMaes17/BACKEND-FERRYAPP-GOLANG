@@ -279,4 +279,36 @@ func ObtenerFerry(db *pgx.Conn) http.HandlerFunc {
 	}
 }
 
+func ObtenerFerrysPorEmpresa(db *pgx.Conn) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rifEmpresa := chi.URLParam(r, "rif")
+
+		rows, err := db.Query(r.Context(),
+			`SELECT matricula, rif_empresa, nombre, modelo, capacidad_economica, capacidad_vip, estado
+             FROM ferrys WHERE rif_empresa = $1`, rifEmpresa)
+		if err != nil {
+			responderError(w, &HandlerError{http.StatusInternalServerError, "Error al buscar ferris"})
+			return
+		}
+		defer rows.Close()
+
+		var ferrys []models.Ferry
+		for rows.Next() {
+			var f models.Ferry
+			if err := rows.Scan(&f.Matricula, &f.RifEmpresa, &f.Nombre, &f.Modelo, &f.CapacidadEconomica, &f.CapacidadVIP, &f.Estado); err != nil {
+				responderError(w, &HandlerError{http.StatusInternalServerError, "Error escaneando ferry"})
+				return
+			}
+			ferrys = append(ferrys, f)
+		}
+
+		if err = rows.Err(); err != nil {
+			responderError(w, &HandlerError{http.StatusInternalServerError, "Error en las filas de ferris"})
+			return
+		}
+
+		responderJSON(w, http.StatusOK, ferrys)
+	}
+}
+
 //Codigo hecho de una manera muy rapida por cuestiones de tiempo (Pronta refactorizacion)

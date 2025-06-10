@@ -191,6 +191,41 @@ func EstadoEmpresa(db *pgx.Conn) http.HandlerFunc {
 	}
 }
 
+//Obtener empleado por empresa
+
+func EmpleadosPorEmpresa(db *pgx.Conn) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rifEmpresa := chi.URLParam(r, "rif")
+
+		rows, err := db.Query(r.Context(),
+			`SELECT cedula, nombres, apellidos, rif_empresa, email, cargo, estado, numero_tlf 
+             FROM empleados WHERE rif_empresa = $1`, rifEmpresa)
+		if err != nil {
+			http.Error(w, "Error al buscar empleados: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var empleados []models.Empleados
+		for rows.Next() {
+			var emp models.Empleados
+			if err := rows.Scan(&emp.Cedula, &emp.Nombres, &emp.Apellidos, &emp.Rif_empresa, &emp.Email, &emp.Cargo, &emp.Estado, &emp.Numero_tlf); err != nil {
+				http.Error(w, "Error escaneando empleado: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			empleados = append(empleados, emp)
+		}
+
+		if err = rows.Err(); err != nil {
+			http.Error(w, "Error en las filas: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(empleados)
+	}
+}
+
 //Funciones especficas
 
 // Obtener empresa

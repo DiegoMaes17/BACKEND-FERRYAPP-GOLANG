@@ -35,6 +35,7 @@ const (
 type Claims struct {
 	UsuarioID   string `json:"usuario_id"`
 	TipoUsuario string `json:"tipo_usuario"`
+	RifCedula   string `json:"rif_cedula"`
 	jwt.RegisteredClaims
 }
 
